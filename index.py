@@ -32,19 +32,19 @@ async def address_exists(connection, address):
     cursor.close()
     return result[0] if result else None
 
-# location에 데이터를 삽입하는 함수
-async def insert_location(connection, state, city, district, address):
+async def insert_location(connection, state, city, district, address, latitude, longitude):
     cursor = connection.cursor()
     insert_query = """
-        INSERT INTO location (state, city, district, address)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO location (state, city, district, address, latitude, longitude)
+        VALUES (%s, %s, %s, %s, %s, %s)
     """
-    cursor.execute(insert_query, (state, city, district, address))
+    cursor.execute(insert_query, (state, city, district, address, latitude, longitude))
     location_id = cursor.lastrowid  # 삽입된 레코드의 ID를 가져옵니다.
     connection.commit()
     cursor.close()
     print(f'Location inserted with ID: {location_id}')
     return location_id
+
 
 
 # soccer_fields에 데이터를 삽입하는 함수
@@ -70,7 +70,7 @@ async def insert_soccer_field(connection, location_id, field_data):
 # CSV 파일 처리 및 데이터베이스에 데이터 삽입
 async def process_csv(connection):
     df = pd.read_csv('KS_WNTY_PUBLIC_PHSTRN_FCLTY_STTUS_202303.csv')
-    df.fillna('', inplace=True)
+    df.fillna(0, inplace=True)
     print('chkchkchkh')
     for _, row in df.iterrows():
         if row['INDUTY_NM'] in ['간이운동장', '축구장']:
@@ -78,10 +78,12 @@ async def process_csv(connection):
             state = row['ROAD_NM_CTPRVN_NM']
             city = row['ROAD_NM_SIGNGU_NM']
             district = row['ROAD_NM_EMD_NM'] or ''
+            longitude = row['FCLTY_LO'] or ''
+            latitude = row['FCLTY_LA'] or ''
             location_id = await address_exists(connection, address)
-            if not location_id and all([state, city, district, address]):
-                print(state, city, district, address)
-                location_id = await insert_location(connection, state, city, district, address)
+            if not location_id and all([state, city, district, address, longitude, latitude]):
+                print(state, city, district, address, longitude, latitude)
+                location_id = await insert_location(connection, state, city, district, address, longitude, latitude)
                 field_data = {
                     'field_name': row['FCLTY_NM'],
                     'district': district,
