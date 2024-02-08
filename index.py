@@ -73,7 +73,7 @@ async def process_csv(connection):
     df.fillna(0, inplace=True)
     print('chkchkchkh')
     for _, row in df.iterrows():
-        if row['INDUTY_NM'] in ['간이운동장', '축구장']:
+        if row['INDUTY_NM'] in ['축구장']:
             address = row['RDNMADR_NM'] or ''
             state = row['ROAD_NM_CTPRVN_NM']
             city = row['ROAD_NM_SIGNGU_NM']
